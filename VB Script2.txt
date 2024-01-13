@@ -1,0 +1,83 @@
+Attribute VB_Name = "Module2"
+Sub StockDataAnalysis()
+
+    ' Turn off screen updating for performance
+    Application.ScreenUpdating = False
+    
+    ' Declare variables for sheet, loop counters, and data storage
+    Dim ws As Worksheet
+    Dim lastRow As Long, i As Long, summaryTableRow As Integer
+    Dim ticker As String, totalVolume As Double, yearlyChange As Double
+    Dim percentChange As Double, startPrice As Double, endPrice As Double
+
+    MsgBox "Stock Data Analysis Start!"
+
+    ' Loop through each worksheet
+    For Each ws In ThisWorkbook.Worksheets
+        ws.Range("I1").Value = "Ticker"
+        ws.Range("J1").Value = "Yearly Change"
+        ws.Range("K1").Value = "Percent Change"
+        ws.Range("L1").Value = "Total Stock Volume"
+        
+        ' Initial setup for each worksheet
+        lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+        summaryTableRow = 2
+        totalVolume = 0
+        If ws.Cells(2, 3).Value <> 0 Then
+            startPrice = ws.Cells(2, 3).Value
+        End If
+'cells = row number,column number
+'range =column letter, row number
+        ' Loop through all rows of the current worksheet
+        For i = 2 To lastRow
+            ' Check if we are still within the same ticker
+            If ws.Cells(i + 1, 1).Value <> ws.Cells(i, 1).Value Then
+                ' Capture the end price and calculate changes
+                ticker = ws.Cells(i, 1).Value
+                endPrice = ws.Cells(i, 6).Value
+                yearlyChange = endPrice - startPrice
+                If startPrice <> 0 Then
+                    percentChange = (yearlyChange / startPrice) * 100
+                Else
+                    percentChange = 0
+                End If
+                totalVolume = totalVolume + ws.Cells(i, 7).Value
+
+                ' Output the data to the summary table
+                With ws
+                    .Cells(summaryTableRow, 9).Value = ticker
+                    .Cells(summaryTableRow, 10).Value = yearlyChange
+                    .Cells(summaryTableRow, 11).Value = percentChange
+                    .Cells(summaryTableRow, 11).NumberFormat = "0.00%"
+                    .Cells(summaryTableRow, 12).Value = totalVolume
+                End With
+
+                ' Reset variables for the next ticker
+                summaryTableRow = summaryTableRow + 1
+                totalVolume = 0
+                If ws.Cells(i + 1, 3).Value <> 0 Then
+                    startPrice = ws.Cells(i + 1, 3).Value
+                End If
+            Else
+                ' Accumulate the total volume for the current ticker
+                totalVolume = totalVolume + ws.Cells(i, 7).Value
+            End If
+        Next i
+
+        ' Apply conditional formatting to the summary table
+        For i = 2 To summaryTableRow
+            If ws.Cells(i, 10).Value > 0 Then
+                ws.Cells(i, 10).Interior.Color = RGB(0, 255, 0) ' Green for positive change
+            Else
+                ws.Cells(i, 10).Interior.Color = RGB(255, 0, 0) ' Red for negative change
+            End If
+        Next i
+    Next ws
+
+    ' Turn screen updating back on
+    Application.ScreenUpdating = True
+    
+    MsgBox "Stock Data Analysis Complete!"
+
+End Sub
+
